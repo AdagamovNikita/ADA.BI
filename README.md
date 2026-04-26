@@ -236,4 +236,4 @@ If you want to look at the exact code and contracts, you can find them in these 
 * `frontend/charts.html`: A working HTML file containing the ECharts code to show how the JSON data is visualized on the frontend.
 
 ---
-+ Designed and Documented by Nikita Adagamov as a System Analysis Portfolio Project
+Designed and Documented by Nikita Adagamov as a System Analysis Portfolio Project
