@@ -2,7 +2,7 @@
 
 **ADA.BI** is a lightweight, high-performance analytical BI platform designed specifically for small businesses to track unit economics and marketing performance. It processes raw data files entirely in-memory using **DuckDB** and persists curated datasets in **Apache Parquet**.
 
-🔗 **[Full Project Case Study & Architecture Docs (Notion Hub)](#вставь_сюда_ссылку_на_твой_Notion)**
+🔗 **[Full Project Case Study & Architecture Docs (Notion Hub)](https://grand-bathroom-927.notion.site/ADA-BI-34e059ef362d80b1aa70c48c449b965e)**
 
 ## Repository Contents
 This repository contains the technical artifacts derived from the System Analysis and Architecture design phases:
