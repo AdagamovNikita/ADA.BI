@@ -1,6 +1,6 @@
 # ADA.BI | System Architecture Portfolio
 
-This repository contains the technical documentation, architectural design, and API contracts for **ADA.BI**. I built this pet project to showcase my skills as a System Analyst. If you are a hiring manager or an engineering lead, this repository demonstrates how I approach business problems, design system architectures, and write clear specifications for developers.
+This repository contains the technical documentation, architectural design, and API contracts for **ADA.BI**. I built this pet project to showcase my skills as a System Analyst. If you are a hiring manager, this repository demonstrates how I approach business problems, design system architectures, and write clear specifications for developers.
 
 You can view the full business context, user requirements, and UI designs in my main portfolio hub:
 **[View the Full ADA.BI Case Study on Notion](https://grand-bathroom-927.notion.site/ADA-BI-34e059ef362d80b1aa70c48c449b965e)**
@@ -9,9 +9,9 @@ You can view the full business context, user requirements, and UI designs in my 
 
 ## What is ADA.BI?
 
-Small businesses often struggle to track their marketing performance. Their data is scattered across different CSV exports (like Google Ads or Meta Ads), and they usually cannot afford expensive analytics tools like Tableau or hire dedicated data engineers. 
+Small businesses often struggle to track their marketing performance. Their data is scattered across different CSV exports(like Google Ads or Meta Ads), and they usually cannot afford expensive analytics tools like Tableau. 
 
-ADA.BI is a lightweight analytical platform designed to solve this. A business owner can simply upload a raw data file, visually map their columns, and instantly get a dashboard showing complex unit economics like Customer Acquisition Cost (CAC) and Lifetime Value (LTV). It requires zero coding or SQL knowledge from the user.
+ADA.BI is a lightweight analytical platform designed to solve this. A business owner can simply upload a raw data file, visually map their columns, and instantly get a dashboard showing complex unit economics like CAC and LTV. It requires zero coding or SQL knowledge from the user.
 
 ## How the Architecture Works
 
@@ -101,13 +101,20 @@ sequenceDiagram
 
 I broke the data modeling down into three stages to ensure the logic was sound before writing any database code.
 
-### Phase 1: Conceptual Model
-* **User:** The business owner using the platform.
-* **Dataset:** A record of the uploaded file and its current status.
-* **AnalysisReport:** The output data used to draw charts on the frontend.
+### Phase 1: Conceptual Data Model
+Purpose: Define business entities and their high-level relationships without technical implementation details.
 
-### Phase 2: Logical Model
-This shows how the core tables relate to each other.
+```mermaid
+erDiagram
+    USER ||--o{ DATASET : "uploads and manages"
+    USER ||--o{ KPI_TARGET : "defines"
+    DATASET ||--o| MAPPING_CONFIG : "requires"
+    DATASET ||--o{ ANALYSIS_REPORT : "generates"
+    DATASET ||--o| DATASET : "versions (parent/child)"
+```
+
+### Phase 2: Logical Data Model
+Purpose: Define the data structure, attributes, and keys independent of the specific DBMS.
 
 ```mermaid
 erDiagram
@@ -115,25 +122,47 @@ erDiagram
         Integer id PK
         String email
         String password_hash
+        DateTime created_at
     }
     Dataset {
         Integer id PK
         Integer user_id FK
-        String status
+        String original_filename
+        String raw_file_path
         String processed_file_path
+        Integer version_number
+        Integer parent_dataset_id FK
+        DateTime created_at
     }
     AnalysisReport {
         Integer id PK
         Integer dataset_id FK
+        Integer user_id FK
+        String status
         JSON kpi_metrics
+        JSON charts_data
+        JSON insights
+        JSON filter_params
+        DateTime created_at
     }
+    KPITarget {
+        Integer id PK
+        Integer user_id FK
+        String metric_name
+        Decimal target_value
+        String comparison_operator
+        DateTime created_at
+    }
+
     User ||--o{ Dataset : "owns"
+    User ||--o{ KPITarget : "sets"
+    User ||--o{ AnalysisReport : "views"
     Dataset ||--o{ AnalysisReport : "source for"
-    Dataset ||--o| Dataset : "versions (parent/child)"
+    Dataset ||--o| Dataset : "parent of"
 ```
 
-### Phase 3: Physical Schema (DBML)
-This is the actual structure for the SQLite metadata database. It includes strict typing, specifically using DECIMAL types to ensure financial calculations are perfectly accurate.
+### Phase 3: Physical Data Model
+Purpose: Implementation-specific schema for SQLite and Apache Parquet.
 
 ```dbml
 Table users {
@@ -150,7 +179,6 @@ Table datasets {
   raw_file_path TEXT
   processed_file_path TEXT
   mapping_config TEXT // JSON payload
-  status TEXT [default: 'uploaded'] // uploaded, mapping_pending, processing, ready, failed
   version INTEGER [default: 1]
   parent_dataset_id INTEGER [ref: > datasets.id]
   created_at TIMESTAMP [default: `CURRENT_TIMESTAMP`]
@@ -160,21 +188,23 @@ Table analyses {
   id INTEGER [pk, increment]
   dataset_id INTEGER [not null, ref: > datasets.id]
   user_id INTEGER [not null, ref: > users.id]
+  status TEXT [default: 'processing'] // processing, completed, failed
   kpi_metrics TEXT // JSON payload
   charts_data TEXT // JSON payload
   insights TEXT // JSON payload
   filter_params TEXT // JSON payload
   created_at TIMESTAMP [default: `CURRENT_TIMESTAMP`]
 }
-```
 
-#### The Parquet Target Schema
-After the ETL process finishes, the data written to the Parquet file strictly follows this structure:
-* `sys_date`: DATE (NOT NULL)
-* `sys_revenue`: DECIMAL(18,2) (NOT NULL, Defaults to 0.0)
-* `sys_spend`: DECIMAL(18,2) (NOT NULL, Defaults to 0.0)
-* `sys_orders`, `sys_new_orders`, `sys_returning_orders`, `sys_traffic`: INTEGER
-* `sys_channel`: VARCHAR
+Table kpi_targets {
+  id INTEGER [pk, increment]
+  user_id INTEGER [not null, ref: > users.id]
+  metric_name TEXT [not null]
+  target_value REAL [not null]
+  comparison TEXT [not null] // 'lte', 'gte'
+  created_at TIMESTAMP [default: `CURRENT_TIMESTAMP`]
+}
+```
 
 ---
 
