@@ -4,7 +4,7 @@ This repository contains the technical documentation, architectural design, and 
 
 I built this pet project to showcase my skills as a System Analyst. If you are a hiring manager, this repository demonstrates how I approach business problems, design system architectures, and write clear specifications for developers.
 
-You can view the full business context, user requirements, and UI designs in my main portfolio hub:
+You can view the full version of my work here:
 **[View the Full ADA.BI Case Study on Notion](https://grand-bathroom-927.notion.site/ADA-BI-34e059ef362d80b1aa70c48c449b965e)**
 
 
