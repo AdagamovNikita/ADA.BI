@@ -1,4 +1,4 @@
-# ADA.BI | System Analysis Portfolio
+# ADA.BI 
 
 This repository contains the technical documentation, architectural design, and API contracts for **ADA.BI**. 
 
