@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADA.BI ECharts Examples</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <style>
+        body {
+            background-color: #0f0f23;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            padding: 40px;
+            justify-content: center;
+        }
+        .chart-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .title { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #fff; }
+        #line-chart { width: 700px; height: 400px; }
+        #bar-chart { width: 400px; height: 300px; }
+        #donut-chart { width: 400px; height: 300px; }
+    </style>
+</head>
+<body>
+
+    <div class="chart-card">
+        <div class="title">1. Revenue vs Orders (Dual Axis Line)</div>
+        <div id="line-chart"></div>
+    </div>
+
+    <div class="chart-card">
+        <div class="title">2. Spend by Channel (Horizontal Bar)</div>
+        <div id="bar-chart"></div>
+    </div>
+
+    <div class="chart-card">
+        <div class="title">3. New vs Returning Customers (Donut)</div>
+        <div id="donut-chart"></div>
+    </div>
+
+    <script>
+        const textColor = '#94a3b8';
+        const splitLineColor = 'rgba(255, 255, 255, 0.05)';
+
+        const lineChart = echarts.init(document.getElementById('line-chart'));
+        lineChart.setOption({
+            tooltip: { trigger: 'axis' },
+            legend: { data: ['Revenue ($)', 'Orders'], textStyle: { color: textColor }, bottom: 0 },
+            grid: { left: '5%', right: '5%', bottom: '15%', containLabel: true },
+            xAxis: { 
+                type: 'category', 
+                data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                axisLabel: { color: textColor }
+            },
+            yAxis: [
+                { type: 'value', name: 'Revenue', axisLabel: { color: textColor }, splitLine: { lineStyle: { color: splitLineColor } } },
+                { type: 'value', name: 'Orders', axisLabel: { color: textColor }, splitLine: { show: false } }
+            ],
+            series: [
+                {
+                    name: 'Revenue ($)', type: 'line', smooth: true,
+                    itemStyle: { color: '#6c5ce7' },
+                    areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{offset: 0, color: 'rgba(108, 92, 231, 0.4)'}, {offset: 1, color: 'rgba(108, 92, 231, 0)'}]) },
+                    data: [1200, 1350, 1050, 1400, 950, 2200, 2100]
+                },
+                {
+                    name: 'Orders', type: 'line', yAxisIndex: 1, smooth: true,
+                    itemStyle: { color: '#00cec9' },
+                    data: [12, 14, 10, 15, 9, 28, 25]
+                }
+            ]
+        });
+
+        const barChart = echarts.init(document.getElementById('bar-chart'));
+        barChart.setOption({
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+            grid: { left: '5%', right: '10%', bottom: '5%', containLabel: true },
+            xAxis: { type: 'value', axisLabel: { color: textColor }, splitLine: { lineStyle: { color: splitLineColor } } },
+            yAxis: { type: 'category', data: ['Affiliate', 'Email', 'Search', 'Social'], axisLabel: { color: textColor } },
+            series: [{
+                name: 'Spend ($)', type: 'bar',
+                itemStyle: { color: '#6c5ce7', borderRadius: [0, 4, 4, 0] },
+                data: [150, 320, 850, 1200]
+            }]
+        });
+
+        const donutChart = echarts.init(document.getElementById('donut-chart'));
+        donutChart.setOption({
+            tooltip: { trigger: 'item' },
+            legend: { bottom: '0%', left: 'center', textStyle: { color: textColor } },
+            series: [{
+                name: 'Customers', type: 'pie', radius: ['50%', '70%'],
+                avoidLabelOverlap: false,
+                itemStyle: { borderRadius: 8, borderColor: '#0f0f23', borderWidth: 2 },
+                label: { show: false, position: 'center' },
+                emphasis: { label: { show: true, fontSize: '20', fontWeight: 'bold', color: '#fff' } },
+                labelLine: { show: false },
+                color: ['#00cec9', '#6c5ce7'],
+                data: [
+                    { value: 145, name: 'New' },
+                    { value: 312, name: 'Returning' }
+                ]
+            }]
+        });
+
+        window.addEventListener('resize', function() {
+            lineChart.resize(); barChart.resize(); donutChart.resize();
+        });
+    </script>
+</body>
+</html>

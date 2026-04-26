@@ -1,0 +1,51 @@
+// SQLite Physical Schema
+
+Table users {
+  id INTEGER [pk, increment]
+  email TEXT [unique, not null]
+  password_hash TEXT [not null]
+  created_at TIMESTAMP [default: `CURRENT_TIMESTAMP`]
+}
+
+Table datasets {
+  id INTEGER [pk, increment]
+  user_id INTEGER [not null, ref: > users.id]
+  original_filename TEXT [not null]
+  raw_file_path TEXT
+  processed_file_path TEXT
+  mapping_config TEXT // JSON payload
+  status TEXT [default: 'uploaded'] // uploaded, mapping_pending, processing, ready, failed
+  version INTEGER [default: 1]
+  parent_dataset_id INTEGER [ref: > datasets.id]
+  created_at TIMESTAMP [default: `CURRENT_TIMESTAMP`]
+}
+
+Table analyses {
+  id INTEGER [pk, increment]
+  dataset_id INTEGER [not null, ref: > datasets.id]
+  user_id INTEGER [not null, ref: > users.id]
+  kpi_metrics TEXT // JSON payload
+  charts_data TEXT // JSON payload
+  insights TEXT // JSON payload
+  filter_params TEXT // JSON payload
+  created_at TIMESTAMP [default: `CURRENT_TIMESTAMP`]
+}
+
+Table kpi_targets {
+  id INTEGER [pk, increment]
+  user_id INTEGER [not null, ref: > users.id]
+  metric_name TEXT [not null]
+  target_value DECIMAL(18,2) [not null]
+  comparison TEXT [not null] // 'lte', 'gte'
+  created_at TIMESTAMP [default: `CURRENT_TIMESTAMP`]
+}
+
+// Parquet Curated Schema (DuckDB)
+// sys_date: DATE (NOT NULL)
+// sys_revenue: DECIMAL(18,2) (NOT NULL, Default 0.0)
+// sys_spend: DECIMAL(18,2) (NOT NULL, Default 0.0)
+// sys_orders: INTEGER (NOT NULL, Default 0)
+// sys_new_orders: INTEGER (NOT NULL, Default 0)
+// sys_returning_orders: INTEGER (NOT NULL, Default 0)
+// sys_traffic: INTEGER (NOT NULL, Default 0)
+// sys_channel: VARCHAR (NULLABLE, Default 'Unknown')

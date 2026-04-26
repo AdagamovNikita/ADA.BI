@@ -1,0 +1,348 @@
+openapi: 3.0.3
+info:
+  title: ADA.BI Analytical Platform API
+  description: >
+    API for the ADA.BI MVP. Supports session-based authentication, 
+    DuckDB-powered ETL, and dynamic Parquet-based analytics for small businesses.
+    
+    **Constraints:**
+    - Max file size: 16MB.
+    - Auth: Flask Session-based (Cookie: session).
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:5000
+    description: Local Development Server
+
+security:
+  - sessionCookie: []
+
+tags:
+  - name: Authentication
+    description: User identity and session management.
+  - name: Datasets
+    description: Ingestion, Mapping, and ETL Pipeline.
+  - name: Analytics
+    description: Report generation, Filtering, and Comparison.
+  - name: Export
+    description: Binary file generation for external use.
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: session
+      description: Flask session cookie containing user_id.
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "error"
+        message:
+          type: string
+          example: "File size exceeds 16MB limit."
+        code:
+          type: string
+          example: "ERR_FILE_TOO_LARGE"
+
+    UserCredentials:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "owner@smallbiz.com"
+        password:
+          type: string
+          format: password
+          example: "secure_password_123"
+
+    MappingConfig:
+      type: object
+      required:
+        - mapping
+      properties:
+        mapping:
+          type: object
+          description: Key-value pairs mapping user headers to system columns.
+          example:
+            "Date": "sys_date"
+            "Total Revenue": "sys_revenue"
+            "Ad Spend": "sys_spend"
+            "Transactions": "sys_orders"
+            "New Customers": "sys_new_orders"
+            "Return Traffic": "sys_returning_orders"
+            "Website Visits": "sys_traffic"
+            "Marketing Source": "sys_channel"
+
+    KPI_Metrics:
+      type: object
+      properties:
+        romi: { type: number, example: 145.2 }
+        drr: { type: number, example: 35.5 }
+        cac: { type: number, example: 12.40 }
+        cpo: { type: number, example: 8.50 }
+        cr: { type: number, example: 4.2 }
+        retention_rate: { type: number, example: 22.1 }
+        ltv: { type: number, example: 85.00 }
+        ltv_cac_ratio: { type: number, example: 6.8 }
+
+    ChartData:
+      type: object
+      properties:
+        line_chart:
+          type: object
+          properties:
+            months: { type: array, items: { type: string }, example: ["Jan", "Feb", "Mar"] }
+            revenue: { type: array, items: { type: number }, example: [1000, 1200, 1500] }
+            orders: { type: array, items: { type: number }, example: [50, 60, 75] }
+        bar_channel:
+          type: object
+          properties:
+            channels: { type: array, items: { type: string }, example: ["Google", "FB", "Email"] }
+            spend: { type: array, items: { type: number }, example: [200, 400, 50] }
+        donut_new_vs_returning:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string, example: "New" }
+              value: { type: number, example: 60 }
+
+    AnalysisResponse:
+      type: object
+      properties:
+        analysis_id: { type: integer, example: 101 }
+        dataset_id: { type: integer, example: 5 }
+        status: { type: string, example: "completed" }
+        kpi_metrics: { $ref: '#/components/schemas/KPI_Metrics' }
+        charts_data: { $ref: '#/components/schemas/ChartData' }
+        insights:
+          type: array
+          items:
+            type: object
+            properties:
+              type: { type: string, example: "warning" }
+              text: { type: string, example: "ROMI dropped by 10% compared to last month." }
+
+paths:
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a new user.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserCredentials' }
+      responses:
+        '201': 
+          description: User created.
+        '400': 
+          description: Email already exists.
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Login and start session.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserCredentials' }
+      responses:
+        '200': 
+          description: Login successful.
+        '401': 
+          description: Invalid credentials.
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: End current session.
+      responses:
+        '200': 
+          description: Logout successful.
+
+  /datasets/upload:
+    post:
+      tags: [Datasets]
+      summary: Upload a raw CSV/Excel file.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: File uploaded.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dataset_id: { type: integer }
+        '413': 
+          description: File size exceeds the 16MB limit.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /datasets/{id}/preview:
+    get:
+      tags: [Datasets]
+      summary: Get first 5 rows and headers for mapping.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Data preview.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  headers: { type: array, items: { type: string } }
+                  rows: { type: array, items: { type: object } }
+
+  /datasets/{id}/mapping:
+    post:
+      tags: [Datasets]
+      summary: Save mapping and trigger ETL pipeline.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MappingConfig' }
+      responses:
+        '202': 
+          description: ETL pipeline triggered.
+
+  /datasets/{id}/status:
+    get:
+      tags: [Datasets]
+      summary: Get current ETL status.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Status returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: "processing" }
+
+  /analysis/{id}:
+    get:
+      tags: [Analytics]
+      summary: Retrieve a full analytical report.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Full analytical report retrieved successfully.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AnalysisResponse' }
+
+  /analysis/{id}/filter:
+    post:
+      tags: [Analytics]
+      summary: Recalculate analysis using date/channel filters.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                date_range: { type: array, items: { type: string, format: date }, example: ["2024-01-01", "2024-03-31"] }
+                channels: { type: array, items: { type: string }, example: ["Google Ads", "Facebook"] }
+      responses:
+        '200':
+          description: Filtered report returned successfully.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AnalysisResponse' }
+
+  /analysis/compare:
+    get:
+      tags: [Analytics]
+      summary: Compare two analyses.
+      parameters:
+        - name: old_id
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: new_id
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Diff report returned.
+
+  /analysis/{id}/export/csv:
+    get:
+      tags: [Export]
+      summary: Export report data to CSV.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Binary CSV file.
+          content:
+            text/csv:
+              schema: { type: string, format: binary }
+
+  /analysis/{id}/export/excel:
+    get:
+      tags: [Export]
+      summary: Export report data to XLSX.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Binary XLSX file.
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema: { type: string, format: binary }
