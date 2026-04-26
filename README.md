@@ -5,7 +5,6 @@ This repository contains the technical documentation, architectural design, and 
 You can view the full business context, user requirements, and UI designs in my main portfolio hub:
 **[View the Full ADA.BI Case Study on Notion](https://grand-bathroom-927.notion.site/ADA-BI-34e059ef362d80b1aa70c48c449b965e)**
 
----
 
 ## What is ADA.BI?
 
@@ -23,7 +22,6 @@ To make the platform fast, cheap to host, and easy to maintain, I designed a spe
 4. **Metadata Management (SQLite):** While the actual analytics data lives in Parquet files, we still need to track users, sessions, and dataset statuses. I chose SQLite for this. It handles user authentication and stores the paths to the Parquet files.
 5. **Dynamic Frontend Analytics:** When a user applies a date filter on the dashboard, the backend opens an isolated connection to the specific Parquet file, runs the calculation, and returns a small, formatted JSON payload. The frontend uses Vanilla JS and Apache ECharts to render the graphs without doing any heavy lifting.
 
----
 
 ## System Architecture Visualizations
 
@@ -95,11 +93,8 @@ sequenceDiagram
     Frontend->>User: Update ECharts UI
 ```
 
----
 
 ## Database Design
-
-I broke the data modeling down into three stages to ensure the logic was sound before writing any database code.
 
 ### Phase 1: Conceptual Data Model
 Purpose: Define business entities and their high-level relationships without technical implementation details.
@@ -206,7 +201,6 @@ Table kpi_targets {
 }
 ```
 
----
 
 ## Business Metrics (KPIs)
 
@@ -223,7 +217,6 @@ The system automatically calculates 8 unit economics metrics. The backend runs t
 | **LTV** | Simplified Period LTV | `Revenue / New Orders` | Average revenue generated per acquired customer. |
 | **LTV:CAC** | LTV to CAC Ratio | `LTV / CAC` | An indicator of overall business health. |
 
----
 
 ## Frontend Visualizations
 
@@ -233,7 +226,6 @@ The REST API serves pre-formatted JSON structures directly to the frontend. The 
 2. **Spend by Channel (Horizontal Bar Chart):** Shows where the marketing budget is going. Using horizontal bars keeps long channel names readable.
 3. **New vs Returning Customers (Donut Chart):** A clean visualization of customer retention.
 
----
 
 ## Repository Files
 
@@ -244,4 +236,4 @@ If you want to look at the exact code and contracts, you can find them in these 
 * `frontend/charts.html`: A working HTML file containing the ECharts code to show how the JSON data is visualized on the frontend.
 
 ---
-Designed and Documented by Nikita Adagamov as a System Analysis Portfolio Project
++ Designed and Documented by Nikita Adagamov as a System Analysis Portfolio Project
